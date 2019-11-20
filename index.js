@@ -14,10 +14,10 @@ function seedgen () {
   return crypto.randomBytes(BLOCK_SIZE)
 }
 
-function sign (keyObj, data, nonce) {
+function sign (keyObj, data) {
   return {
     bitfield: 1 << keyObj.index,
-    signature: crypto.createHmac('sha256', keyObj.key).update(nonce).update(data).digest()
+    signature: crypto.createHmac('sha256', keyObj.key).update(data).digest()
   }
 }
 
@@ -28,7 +28,7 @@ function combine (signatures) {
   }
 }
 
-function verify (keys, signature, data, nonce, threshold) {
+function verify (keys, signature, data, threshold) {
   var bitfield = signature.bitfield
   if (popcnt(bitfield) < threshold) return false
 
@@ -36,7 +36,7 @@ function verify (keys, signature, data, nonce, threshold) {
   var sig = Buffer.from(signature.signature)
   for (var i = 0; i < usedKeys.length; i++) {
     const key = keys[usedKeys[i]]
-    const keySig = sign(key, data, nonce)
+    const keySig = sign(key, data)
 
     sig = xorBufs([sig, keySig.signature])
     bitfield ^= keySig.bitfield
@@ -45,7 +45,7 @@ function verify (keys, signature, data, nonce, threshold) {
   return bitfield === 0 && sig.every(b => b === 0)
 }
 
-function verifyDerived (masterSeed, signature, data, nonce, threshold) {
+function verifyDerived (masterSeed, signature, data, threshold) {
   var bitfield = signature.bitfield
   if (popcnt(bitfield) < threshold) return false
 
@@ -53,7 +53,7 @@ function verifyDerived (masterSeed, signature, data, nonce, threshold) {
   var sig = Buffer.from(signature.signature)
   for (var i = 0; i < usedKeys.length; i++) {
     const key = deriveKey(masterSeed, '' + usedKeys[i])
-    const keySig = sign(key, data, nonce)
+    const keySig = sign(key, data)
 
     sig = xorBufs([sig, keySig.signature])
     bitfield ^= keySig.bitfield

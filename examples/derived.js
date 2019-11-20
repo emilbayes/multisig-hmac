@@ -10,14 +10,15 @@ const k3 = multisigHmac.deriveKey(seed, '3')
 
 // Sign by each client with 2-of-3
 const data = Buffer.from('Hello world')
-const nonce = Buffer.from(Date.now().toString())
 
-const s1 = multisigHmac.sign(k1, data, nonce)
-const s3 = multisigHmac.sign(k2, data, nonce)
+// Notice no mention of nonce here. The data can follow whatever format you
+// desire, but should include a nonce
+const s1 = multisigHmac.sign(k1, data)
+const s3 = multisigHmac.sign(k2, data)
 
 const signature = multisigHmac.combine([s1, s3])
 
 // Verify on the server, but now keys are dynamically derived
 const threshold = 2
-const verified = multisigHmac.verifyDerived(seed, signature, data, nonce, threshold)
+const verified = multisigHmac.verifyDerived(seed, signature, data, threshold)
 console.log(verified)

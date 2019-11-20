@@ -21,17 +21,18 @@ const k3 = multisigHmac.keygen(3)
 
 // Sign by each client with 2-of-3
 const data = Buffer.from('Hello world')
-const nonce = Buffer.from(Date.now().toString())
 
-const s1 = multisigHmac.sign(k1, data, nonce)
-const s3 = multisigHmac.sign(k3, data, nonce)
+// Notice no mention of nonce here. The data can follow whatever format you
+// desire, but should include a nonce
+const s1 = multisigHmac.sign(k1, data)
+const s3 = multisigHmac.sign(k3, data)
 
 const signature = multisigHmac.combine([s1, s3])
 
 // Verify on the server
 const threshold = 2
 const keys = [k1, k2, k3]
-const verified = multisigHmac.verify(keys, signature, data, nonce, threshold)
+const verified = multisigHmac.verify(keys, signature, data, threshold)
 console.log(verified)
 ```
 
@@ -50,16 +51,17 @@ const k3 = multisigHmac.deriveKey(seed, 3)
 
 // Sign by each client with 2-of-3
 const data = Buffer.from('Hello world')
-const nonce = Buffer.from(Date.now().toString())
 
-const s1 = multisigHmac.sign(k1, data, nonce)
-const s3 = multisigHmac.sign(k3, data, nonce)
+// Notice no mention of nonce here. The data can follow whatever format you
+// desire, but should include a nonce
+const s1 = multisigHmac.sign(k1, data)
+const s3 = multisigHmac.sign(k3, data)
 
 const signature = multisigHmac.combine([s1, s3])
 
 // Verify on the server, but now keys are dynamically derived
 const threshold = 2
-const verified = multisigHmac.verifyDerived(seed, signature, data, nonce, threshold)
+const verified = multisigHmac.verifyDerived(seed, signature, data, threshold)
 console.log(verified)
 ```
 
@@ -71,13 +73,13 @@ console.log(verified)
 
 ### `const key = multisigHmac.deriveKey(masterSeed, index)`
 
-### `const signature = multisigHmac.sign(key, data, nonce)`
+### `const signature = multisigHmac.sign(key, data)`
 
 ### `const aggSignature = multisigHmac.combine([ signatures... ])`
 
-### `const valid = multisigHmac.verify([keys...], aggSignature, data, nonce, threshold)`
+### `const valid = multisigHmac.verify([keys...], aggSignature, data, threshold)`
 
-### `const valid = multisigHmac.verifyDerived(masterSeed, aggSignature, data, nonce, threshold)`
+### `const valid = multisigHmac.verifyDerived(masterSeed, aggSignature, data, threshold)`
 
 ## Install
 
