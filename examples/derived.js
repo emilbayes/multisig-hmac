@@ -5,7 +5,7 @@ const multisigHmac = require('..')
 const seed = multisigHmac.seedgen()
 
 const k1 = multisigHmac.deriveKey(seed, '1')
-const k2 = multisigHmac.deriveKey(seed, '2')
+// const k2 = multisigHmac.deriveKey(seed, '2')
 const k3 = multisigHmac.deriveKey(seed, '3')
 
 // Sign by each client with 2-of-3
@@ -14,7 +14,7 @@ const data = Buffer.from('Hello world')
 // Notice no mention of nonce here. The data can follow whatever format you
 // desire, but should include a nonce
 const s1 = multisigHmac.sign(k1, data)
-const s3 = multisigHmac.sign(k2, data)
+const s3 = multisigHmac.sign(k3, data)
 
 const signature = multisigHmac.combine([s1, s3])
 
