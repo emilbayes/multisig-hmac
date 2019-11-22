@@ -1,42 +1,85 @@
 const crypto = require('crypto')
+const assert = require('nanoassert')
+const popcnt32 = require('popcnt32')
 
-const BLOCK_SIZE = 512 / 8
+const KEYBYTES = 512 / 8
+const BYTES = 256 / 8
 
-function keygen (index) {
-  return { index, key: crypto.randomBytes(BLOCK_SIZE) }
+function keygen (index, buf) {
+  assert(index === index >>> 0, 'index must be valid uint32')
+  if (buf == null) buf = Buffer.alloc(KEYBYTES)
+  assert(Buffer.isBuffer(buf), 'buf must be Buffer')
+  assert(buf.byteLength >= KEYBYTES, 'buf must be at least KEYBYTES long')
+
+  return { index, key: crypto.randomFillSync(buf, 0, KEYBYTES) }
 }
 
-function deriveKey (masterSeed, index) {
-  return { index, key: crypto.createHmac('sha256', masterSeed).update('derived').update(index).digest() }
+function seedgen (buf) {
+  if (buf == null) buf = Buffer.alloc(KEYBYTES)
+  assert(Buffer.isBuffer(buf), 'buf must be Buffer')
+  assert(buf.byteLength >= KEYBYTES, 'buf must be at least KEYBYTES long')
+
+  return crypto.randomFillSync(buf, 0, KEYBYTES)
 }
 
-function seedgen () {
-  return crypto.randomBytes(BLOCK_SIZE)
+const scratch = Buffer.alloc(7 + 4, 'derived')
+function deriveKey (masterSeed, index, buf) {
+  assert(Buffer.isBuffer(masterSeed), 'masterSeed must be Buffer')
+  assert(masterSeed.byteLength === KEYBYTES, 'masterSeed must KEYBYTES long')
+  assert(index === index >>> 0, 'index must be valid uint32')
+  if (buf == null) buf = Buffer.alloc(BYTES)
+  assert(Buffer.isBuffer(buf), 'buf must be Buffer')
+  assert(buf.byteLength >= BYTES, 'buf must be at least BYTES long')
+
+  scratch.writeUInt32LE(index, 7)
+  return { index, key: crypto.createHmac('sha256', masterSeed).update(scratch).digest(buf) }
 }
 
-function sign (keyObj, data) {
+function sign (keyObj, data, buf) {
+  assert(keyObj.index === keyObj.index >>> 0, 'keyObj.index must be valid uint32')
+  assert(Buffer.isBuffer(keyObj.key), 'keyObj.key must be Buffer')
+  assert(keyObj.key.byteLength === KEYBYTES, 'keyObj.key must be KEYBYTES long')
+  assert(typeof data === 'string' || Buffer.isBuffer(data), 'data must be String or Buffer')
+
+  if (buf == null) buf = Buffer.alloc(BYTES)
+  assert(Buffer.isBuffer(buf), 'buf must be Buffer')
+  assert(buf.byteLength >= BYTES, 'buf must be at least BYTES long')
+
   return {
     bitfield: 1 << keyObj.index,
-    signature: crypto.createHmac('sha256', keyObj.key).update(data).digest()
+    signature: crypto.createHmac('sha256', keyObj.key).update(data).digest(buf)
   }
 }
 
-function combine (signatures) {
-  return {
+function combine (signatures, buf) {
+  assert(signatures.every(s => s.bitfield === s.bitfield >>> 0), 'one or more signatures had signature.bitfield not be uint32')
+  assert(signatures.every(s => s.signature.byteLength === BYTES), 'one or more signatures had signature.signature byteLength not be BYTES long')
+  const res = {
     bitfield: xorInts(signatures.map(s => s.bitfield)),
-    signature: xorBufs(signatures.map(s => s.signature))
+    signature: xorBufs(signatures.map(s => s.signature), buf)
   }
+
+  assert(popcnt32(res.bitfield) === signatures.length, 'one or more signatures cancelled out')
+  assert(res.signature.reduce((s, b) => s + b, 0) > 0, 'one or more signatures cancelled out')
+
+  return res
 }
 
-function verify (keys, signature, data, threshold) {
+function verify (keys, signature, data, threshold, sigScratchBuf) {
+  assert(threshold > 0, 'threshold must be at least 1')
+  assert(threshold === threshold >>> 0, 'threshold must be valid uint32')
   var bitfield = signature.bitfield
-  if (popcnt(bitfield) < threshold) return false
+  const nKeys = popcnt32(bitfield)
+  assert(keys.length >= nKeys, 'Not enough keys given signature.bitfield')
+  assert(typeof data === 'string' || Buffer.isBuffer(data), 'data must be String or Buffer')
+
+  if (nKeys < threshold) return false
 
   const usedKeys = indexes(bitfield)
   var sig = Buffer.from(signature.signature)
   for (var i = 0; i < usedKeys.length; i++) {
     const key = keys[usedKeys[i]]
-    const keySig = sign(key, data)
+    const keySig = sign(key, data, sigScratchBuf)
 
     sig = xorBufs([sig, keySig.signature])
     bitfield ^= keySig.bitfield
@@ -45,53 +88,48 @@ function verify (keys, signature, data, threshold) {
   return bitfield === 0 && sig.every(b => b === 0)
 }
 
-function verifyDerived (masterSeed, signature, data, threshold) {
+function verifyDerived (masterSeed, signature, data, threshold, keyScratchBuf, sigScratchBuf) {
+  assert(Buffer.isBuffer(masterSeed), 'masterSeed must be Buffer')
+  assert(masterSeed.byteLength === KEYBYTES, 'masterSeed must KEYBYTES long')
+  assert(threshold > 0, 'threshold must be at least 1')
+  assert(threshold === threshold >>> 0, 'threshold must be valid uint32')
   var bitfield = signature.bitfield
-  if (popcnt(bitfield) < threshold) return false
+  assert(typeof data === 'string' || Buffer.isBuffer(data), 'data must be String or Buffer')
 
   const usedKeys = indexes(bitfield)
-  var sig = Buffer.from(signature.signature)
-  for (var i = 0; i < usedKeys.length; i++) {
-    const key = deriveKey(masterSeed, '' + usedKeys[i])
-    const keySig = sign(key, data)
 
-    sig = xorBufs([sig, keySig.signature])
+  if (sigScratchBuf == null) sigScratchBuf = Buffer.from(signature)
+  else sigScratchBuf.set(signature)
+
+  for (var i = 0; i < usedKeys.length; i++) {
+    const key = deriveKey(masterSeed, usedKeys[i])
+    const keySig = sign(key, data, keyScratchBuf)
+
+    xorBufs([keySig.signature], sigScratchBuf)
     bitfield ^= keySig.bitfield
   }
 
-  return bitfield === 0 && sig.every(b => b === 0)
+  return bitfield === 0 && sigScratchBuf.every(b => b === 0)
 }
 
 function xorInts (ints) {
-  var int = 0
-  for (var i = 0; i < ints.length; i++) {
-    int ^= ints[i]
-  }
-
-  return int
+  return ints.reduce((r, i) => {
+    r ^= i
+    return r
+  })
 }
 
-function xorBufs (bufs) {
-  const outSize = bufs.reduce((l, b) => Math.max(l, b.byteLength), 0)
+function xorBufs (bufs, buf) {
+  if (buf == null) buf = Buffer.alloc(BYTES)
+  assert(Buffer.isBuffer(buf), 'buf must be Buffer')
+  assert(buf.byteLength >= BYTES, 'buf must be at least BYTES long')
 
-  const buf = Buffer.alloc(outSize)
-  for (var i = 0; i < bufs.length; i++) {
-    for (var j = 0; j < bufs[i].length; j++) {
-      buf[j] ^= bufs[i][j]
+  return bufs.reduce((r, b) => {
+    for (var i = 0; i < r.byteLength; i++) {
+      r[i] ^= b[i]
     }
-  }
-
-  return buf
-}
-
-function popcnt (int) {
-  var cnt = 0
-  while (int > 0) {
-    cnt += int & 0x1
-    int >>= 1
-  }
-
-  return cnt
+    return r
+  }, buf)
 }
 
 function indexes (int) {
@@ -109,6 +147,7 @@ function indexes (int) {
 }
 
 module.exports = {
+  KEYBYTES,
   keygen,
   seedgen,
   deriveKey,

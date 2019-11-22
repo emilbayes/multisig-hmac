@@ -67,19 +67,68 @@ console.log(verified)
 
 ## API
 
-### `const key = multisigHmac.keygen()`
+### `const sigLen = multisigHmac.BYTES`
 
-### `const masterSeed = multisigHmac.seedgen()`
+Length of signature `Buffer` in bytes
 
-### `const key = multisigHmac.deriveKey(masterSeed, index)`
+### `const keyLen = multisigHmac.KEYBYTES`
 
-### `const signature = multisigHmac.sign(key, data)`
+Length of key and seed `Buffer`s in bytes
 
-### `const aggSignature = multisigHmac.combine([ signatures... ])`
+### `const key = multisigHmac.keygen([buf])`
 
-### `const valid = multisigHmac.verify([keys...], aggSignature, data, threshold)`
+Generate a new cryptographically random key. Optionally pass a `Buffer` of
+length `KEYBYTES` that the key will be written to. This will then be the same
+`Buffer` in `key.key`.
+Returns `{ index: uint32, key: Buffer }`
 
-### `const valid = multisigHmac.verifyDerived(masterSeed, aggSignature, data, threshold)`
+### `const masterSeed = multisigHmac.seedgen([buf])`
+
+Generate a new cryptographically random master seed. Optionally pass a `Buffer`
+of length `KEYBYTES` that the seed will be written to. This will then be the same
+`Buffer` returned.
+
+### `const key = multisigHmac.deriveKey(masterSeed, index, [buf])`
+
+Derive a new sub key from a master seed. `index` must be a `uint32`, but in
+practice you want to keep a much lower number, as the bitfield used with the
+signature has as many bits as the largest index. A simple counter suffices.
+Optionally pass a `Buffer` of length `KEYBYTES` that the key will be written to.
+This will then be the same `Buffer` in `key.key`. Returns
+`{ index: uint32, key: Buffer }`
+
+### `const signature = multisigHmac.sign(key, data, [buf])`
+
+Independently sign `Buffer` `data` with `key`, using the optional `buf` to store
+the signature. `buf` must be at least `BYTES` long. Returns
+`{ bitfield: uint32, signature: Buffer }`.
+This object can be passed to `combine()`
+
+### `const signature = multisigHmac.combine([ signatures... ], [buf])`
+
+Combine a list of signatures, which have all been signed independently. Only
+include each signature once or they will cancel out. Optionally pass `buf`,
+which will store the aggregate signature. This must be a `Buffer` of `BYTES`.
+Signatures can be combined in any order and over several passes for more
+advanced aggregation schemes. Returns `{ bitfield: uint32, signature: Buffer }`
+
+### `const valid = multisigHmac.verify(keys, signature, data, threshold, [sigScratchBuf])`
+
+Verify a `signature` of `data` against a list of `keys`, over a given
+`threshold`. `keys` must be an `Array` of keys, from which the
+`signature.bitfield` defines which must be verified. Optionally pass
+`sigScratchBuf` which will be used for intermediate signature verification. This
+`Buffer` must be `BYTES` long. Returns a `Boolean` for success.
+
+### `const valid = multisigHmac.verifyDerived(masterSeed, signature, data, threshold, [keyScratchBuf], [sigScratchBuf])`
+
+Verify a `signature` of `data` against dynamically derived keys from
+`masterSeed`, over a given `threshold`. `masterSeed` must be an `Buffer` of
+length `KEYBYTES`, from which the `signature.bitfield` defines which must be
+derived and verified. Optionally pass `keyScratchBuf` for which the intermediate
+keys are derived into and `sigScratchBuf` which will be used for intermediate
+signature verification. These `Buffer`s must be `KEYBYTES` and `BYTES` long,
+respectively. Returns a `Boolean` for success.
 
 ## Install
 

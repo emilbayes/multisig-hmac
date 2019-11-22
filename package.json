@@ -6,7 +6,10 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {},
+  "dependencies": {
+    "nanoassert": "^2.0.0",
+    "popcnt32": "^1.0.0"
+  },
   "devDependencies": {
     "standard": "^14.3.1",
     "tape": "^4.11.0"
