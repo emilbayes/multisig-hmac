@@ -4,9 +4,9 @@ const multisigHmac = new MultisigHMAC(MultisigHMAC.SHA256_PRIMITIVE)
 
 // generate keys, which need to be stored securely
 // and need to be shared securely with each party
-const k1 = multisigHmac.keygen(1)
-const k2 = multisigHmac.keygen(2)
-const k3 = multisigHmac.keygen(3)
+const k1 = multisigHmac.keygen(0)
+const k2 = multisigHmac.keygen(1)
+const k3 = multisigHmac.keygen(2)
 
 // Sign by each client with 2-of-3
 const data = Buffer.from('Hello world')

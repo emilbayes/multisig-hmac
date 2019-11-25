@@ -6,9 +6,9 @@ const multisigHmac = new MultisigHMAC(MultisigHMAC.SHA256_PRIMITIVE)
 // This seed must NOT be shared with any other party
 const seed = multisigHmac.seedgen()
 
-const k1 = multisigHmac.deriveKey(seed, '1')
-// const k2 = multisigHmac.deriveKey(seed, '2')
-const k3 = multisigHmac.deriveKey(seed, '3')
+const k1 = multisigHmac.deriveKey(seed, 1)
+// const k2 = multisigHmac.deriveKey(seed, 2)
+const k3 = multisigHmac.deriveKey(seed, 3)
 
 // Sign by each client with 2-of-3
 const data = Buffer.from('Hello world')
