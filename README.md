@@ -11,7 +11,9 @@ ad hoc.
 Using stored keys:
 
 ```js
-const multisigHmac = require('multisig-hmac')
+const MultisigHMAC = require('multisig-hmac')
+
+const multisigHmac = new MultisigHMAC()
 
 // generate keys, which need to be stored securely
 // and need to be shared securely with each party
@@ -39,7 +41,9 @@ console.log(verified)
 Using a derived master key:
 
 ```js
-const multisigHmac = require('multisig-hmac')
+const MultisigHMAC = require('multisig-hmac')
+
+const multisigHmac = new MultisigHMAC()
 
 // Generate a master seed, which needs to be stored securely
 // This seed must NOT be shared with any other party
@@ -67,20 +71,41 @@ console.log(verified)
 
 ## API
 
-### `const sigLen = multisigHmac.BYTES`
+### Constants
 
-Length of signature `Buffer` in bytes
+* `MultisigHMAC.BYTES` signature length in bytes (default)
+* `MultisigHMAC.KEYBYTES` key length in bytes (default)
+* `MultisigHMAC.PRIMITIVE` is `sha256` (default)
 
-### `const keyLen = multisigHmac.KEYBYTES`
+Specific algorithms (support depends on your OpenSSL version):
 
-Length of key and seed `Buffer`s in bytes
+* `MultisigHMAC.SHA256_BYTES` signature length in bytes
+* `MultisigHMAC.SHA256_KEYBYTES` key length in bytes
+* `MultisigHMAC.SHA256_PRIMITIVE` is `sha256`
+* `MultisigHMAC.SHA384_BYTES` signature length in bytes
+* `MultisigHMAC.SHA384_KEYBYTES` key length in bytes
+* `MultisigHMAC.SHA384_PRIMITIVE` is `sha384`
+* `MultisigHMAC.SHA512_BYTES` signature length in bytes
+* `MultisigHMAC.SHA512_KEYBYTES` key length in bytes
+* `MultisigHMAC.SHA512_PRIMITIVE` is `sha512`
+* `MultisigHMAC.SHA512_256_BYTES` signature length in bytes
+* `MultisigHMAC.SHA512_256_KEYBYTES` key length in bytes
+* `MultisigHMAC.SHA512_256_PRIMITIVE` is `sha512_256` (also knowns as SHA512/256)
 
-### `const key = multisigHmac.keygen([buf])`
+### `const multisigHmac = new MultisigHMAC([alg = MultisigHMAC.PRIMITIVE])`
+
+Create a new instance of `MultisigHMAC`, which can be used as a global
+singleton. Just sets the algorithm to be used for subsequent methods and
+associated constants.
+
+### `const key = multisigHmac.keygen(index, [buf])`
 
 Generate a new cryptographically random key. Optionally pass a `Buffer` of
 length `KEYBYTES` that the key will be written to. This will then be the same
 `Buffer` in `key.key`.
-Returns `{ index: uint32, key: Buffer }`
+Returns `{ index: uint32, key: Buffer }`.
+
+*Note*: `index` should be counted from `0`
 
 ### `const masterSeed = multisigHmac.seedgen([buf])`
 
@@ -96,6 +121,8 @@ signature has as many bits as the largest index. A simple counter suffices.
 Optionally pass a `Buffer` of length `KEYBYTES` that the key will be written to.
 This will then be the same `Buffer` in `key.key`. Returns
 `{ index: uint32, key: Buffer }`
+
+*Note*: `index` should be counted from `0`
 
 ### `const signature = multisigHmac.sign(key, data, [buf])`
 

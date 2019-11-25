@@ -1,4 +1,6 @@
-const multisigHmac = require('..')
+const MultisigHMAC = require('..')
+
+const multisigHmac = new MultisigHMAC(MultisigHMAC.SHA256_PRIMITIVE)
 
 // Generate a master seed, which needs to be stored securely
 // This seed must NOT be shared with any other party

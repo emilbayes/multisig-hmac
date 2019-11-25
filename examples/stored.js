@@ -1,4 +1,6 @@
-const multisigHmac = require('..')
+const MultisigHMAC = require('..')
+
+const multisigHmac = new MultisigHMAC(MultisigHMAC.SHA256_PRIMITIVE)
 
 // generate keys, which need to be stored securely
 // and need to be shared securely with each party

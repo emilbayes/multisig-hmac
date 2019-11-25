@@ -1,4 +1,6 @@
-const multisigHmac = require('.')
+const MultisigHMAC = require('.')
+
+const multisigHmac = new MultisigHMAC(MultisigHMAC.SHA256_PRIMITIVE)
 
 const k1 = multisigHmac.keygen(0)
 const k2 = multisigHmac.keygen(1)
