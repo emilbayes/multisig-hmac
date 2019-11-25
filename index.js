@@ -80,12 +80,13 @@ class MultisigHMAC {
   combine (signatures, buf) {
     assert(signatures.every(s => s.bitfield === s.bitfield >>> 0), 'one or more signatures had signature.bitfield not be uint32')
     assert(signatures.every(s => s.signature.byteLength === this._bytes), 'one or more signatures had signature.signature byteLength not be BYTES long')
+    const bitfields = signatures.map(s => s.bitfield)
     const res = {
-      bitfield: xorInts(signatures.map(s => s.bitfield)),
+      bitfield: xorInts(bitfields),
       signature: xorBufs(signatures.map(s => s.signature), buf)
     }
 
-    assert(popcnt32(res.bitfield) === signatures.length, 'one or more signatures cancelled out')
+    assert(MultisigHMAC.keysCount(res.bitfield) === MultisigHMAC.keysCount(orInts(bitfields)), 'one or more signatures cancelled out')
     assert(res.signature.reduce((s, b) => s + b, 0) > 0, 'one or more signatures cancelled out')
 
     return res
@@ -170,9 +171,16 @@ const BYTES = MultisigHMAC.BYTES = SHA256_BYTES
 const PRIMITIVE = MultisigHMAC.PRIMITIVE = SHA256_PRIMITIVE
 
 function xorInts (ints) {
-  return ints.reduce((r, i) => {
-    r ^= i
-    return r
+  return ints.reduce((sum, int) => {
+    sum ^= int
+    return sum
+  })
+}
+
+function orInts (ints) {
+  return ints.reduce((sum, int) => {
+    sum |= int
+    return sum
   })
 }
 
