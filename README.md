@@ -22,6 +22,12 @@ This scheme takes each separate signature and a bitfield indicating the keys
 used, which are combinable in an any order, allowing for simple threshold
 schemes, or more advanced authentication flows.
 
+Signatures made with this scheme are the same size as standard HMACs, with keys
+being the same size. This module supports the SHA-2 suite of algorithms for HMAC
+making it backwards compatible, in sizes, with existing HMAC authentication.
+Implementing this scheme only requires storing the threshold for actions that
+are multisig enabled.
+
 ## Usage
 
 Key managment can happen in either of two modes, either by storing every of the
