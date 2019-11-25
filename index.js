@@ -95,14 +95,14 @@ class MultisigHMAC {
     assert(threshold > 0, 'threshold must be at least 1')
     assert(threshold === threshold >>> 0, 'threshold must be valid uint32')
     var bitfield = signature.bitfield
-    const nKeys = popcnt32(bitfield)
+    const nKeys = MultisigHMAC.keysCount(bitfield)
     const highestKey = 32 - Math.clz32(bitfield)
     assert(keys.length >= nKeys && keys.length >= highestKey, 'Not enough keys given based on signature.bitfield')
     assert(typeof data === 'string' || Buffer.isBuffer(data), 'data must be String or Buffer')
 
     if (nKeys < threshold) return false
 
-    const usedKeys = indexes(bitfield)
+    const usedKeys = MultisigHMAC.keyIndexes(bitfield)
     var sig = Buffer.from(signature.signature)
     for (var i = 0; i < usedKeys.length; i++) {
       const key = keys[usedKeys[i]]
@@ -123,7 +123,7 @@ class MultisigHMAC {
     var bitfield = signature.bitfield
     assert(typeof data === 'string' || Buffer.isBuffer(data), 'data must be String or Buffer')
 
-    const usedKeys = indexes(bitfield)
+    const usedKeys = this.keyIndexes(bitfield)
 
     if (sigScratchBuf == null) sigScratchBuf = Buffer.from(signature)
     else sigScratchBuf.set(signature)
@@ -137,6 +137,18 @@ class MultisigHMAC {
     }
 
     return bitfield === 0 && sigScratchBuf.every(b => b === 0)
+  }
+
+  static keysCount (bitfield) {
+    assert(bitfield === bitfield >>> 0, 'bitfield must be uint32')
+
+    return popcnt32(bitfield)
+  }
+
+  static keyIndexes (bitfield) {
+    assert(bitfield === bitfield >>> 0, 'bitfield must be uint32')
+
+    return indexes(bitfield)
   }
 }
 
