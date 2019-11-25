@@ -2,6 +2,8 @@
 
 > Multisig scheme for HMAC authentication
 
+**Work in progress**
+
 ## Rationale
 
 Many APIs use symmetric "signatures", through HMACs, of a nonce and the data to
