@@ -96,7 +96,8 @@ class MultisigHMAC {
     assert(threshold === threshold >>> 0, 'threshold must be valid uint32')
     var bitfield = signature.bitfield
     const nKeys = popcnt32(bitfield)
-    assert(keys.length >= nKeys, 'Not enough keys given signature.bitfield')
+    const highestKey = 32 - Math.clz32(bitfield)
+    assert(keys.length >= nKeys && keys.length >= highestKey, 'Not enough keys given based on signature.bitfield')
     assert(typeof data === 'string' || Buffer.isBuffer(data), 'data must be String or Buffer')
 
     if (nKeys < threshold) return false
