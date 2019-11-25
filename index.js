@@ -3,7 +3,7 @@ const assert = require('nanoassert')
 const popcnt32 = require('popcnt32')
 
 class MultisigHMAC {
-  constructor (alg = PRIMITIVE) {
+  constructor (alg = MultisigHMAC.PRIMITIVE) {
     switch (alg) {
       case 'sha256':
         this._alg = SHA256_PRIMITIVE
@@ -166,9 +166,9 @@ const SHA512_256_KEYBYTES = MultisigHMAC.SHA512_256_KEYBYTES = 1024 / 8
 const SHA512_256_BYTES = MultisigHMAC.SHA512_256_BYTES = 256 / 8
 const SHA512_256_PRIMITIVE = MultisigHMAC.SHA512_256_PRIMITIVE = 'sha512_256'
 
-const KEYBYTES = MultisigHMAC.KEYBYTES = SHA256_KEYBYTES
-const BYTES = MultisigHMAC.BYTES = SHA256_BYTES
-const PRIMITIVE = MultisigHMAC.PRIMITIVE = SHA256_PRIMITIVE
+MultisigHMAC.KEYBYTES = SHA256_KEYBYTES
+MultisigHMAC.BYTES = SHA256_BYTES
+MultisigHMAC.PRIMITIVE = SHA256_PRIMITIVE
 
 function xorInts (ints) {
   return ints.reduce((sum, int) => {
