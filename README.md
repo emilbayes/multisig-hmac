@@ -4,19 +4,19 @@
 
 ## Rationale
 
-Many APIs use symmetric "signatures" through HMACs and a nonce of the data to be
-processed by a remote server. You always trust the party to process the data, as
-they are the trusted 3rd party with access to all keys, however the external
-party making the call to be processed only has power over their own keys. To
-as an external party you might want to secure high sensitivity calls with
+Many APIs use symmetric "signatures", through HMACs, of a nonce and the data to
+be processed by a remote server. You always trust the receiving party to process
+the data, as they are the trusted 3rd party with access to all keys, however the
+external party, making the call to be processed, only has power over their own
+keys. As an external party you might want to secure high sensitivity calls with
 additional checks such as allowed IP ranges. Another check is that multiple
 parties on the issuing side co-sign the request.
 
-Imagine a `withdrawal` action on a Bank or Exchange or a `delete` call on a
-Cloud provider, which are both highly sensitive, "destructive" actions.
-Using this multisig scheme, several separate parties will have to agree to
-perform the action. This could be multiple servers or people storing their own
-personal credentials.
+Imagine a `withdrawal` action on a bank or exchange or a `delete` call on a
+cloud provider, which are both highly sensitive, "destructive" actions.
+Using this multisig scheme, several separate entities on the calling party,
+will have to agree to perform the action. This could be multiple servers or
+people storing their own personal credentials.
 
 This scheme takes each separate signature and a bitfield indicating the keys
 used, which are combinable in an any order, allowing for simple threshold
