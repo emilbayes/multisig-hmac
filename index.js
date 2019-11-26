@@ -97,7 +97,7 @@ class MultisigHMAC {
     const bitfields = signatures.map(s => s.bitfield)
     const res = {
       bitfield: xorInts(bitfields),
-      signature: xorBufs(signatures.map(s => s.signature), buf)
+      signature: xorBufs(signatures.map(s => s.signature), this._bytes, buf)
     }
 
     assert(MultisigHMAC.keysCount(res.bitfield) === MultisigHMAC.keysCount(orInts(bitfields)), 'one or more signatures cancelled out')
@@ -123,7 +123,7 @@ class MultisigHMAC {
       const key = keys[usedKeys[i]]
       const keySig = this.sign(key, data, sigScratchBuf)
 
-      sig = xorBufs([sig, keySig.signature])
+      sig = xorBufs([sig, keySig.signature], this._bytes)
       bitfield ^= keySig.bitfield
     }
 
@@ -139,19 +139,17 @@ class MultisigHMAC {
     assert(typeof data === 'string' || Buffer.isBuffer(data), 'data must be String or Buffer')
 
     const usedKeys = this.keyIndexes(bitfield)
-
-    if (sigScratchBuf == null) sigScratchBuf = Buffer.from(signature)
-    else sigScratchBuf.set(signature)
+    var sig = Buffer.from(signature.signature)
 
     for (var i = 0; i < usedKeys.length; i++) {
-      const key = this.deriveKey(masterSeed, usedKeys[i])
-      const keySig = this.sign(key, data, keyScratchBuf)
+      const key = this.deriveKey(masterSeed, usedKeys[i], keyScratchBuf)
+      const keySig = this.sign(key, data)
 
-      xorBufs([keySig.signature], sigScratchBuf)
+      xorBufs([sig, keySig.signature], this._bytes)
       bitfield ^= keySig.bitfield
     }
 
-    return bitfield === 0 && sigScratchBuf.every(b => b === 0)
+    return bitfield === 0 && sig.every(b => b === 0)
   }
 
   static keysCount (bitfield) {
@@ -198,10 +196,10 @@ function orInts (ints) {
   })
 }
 
-function xorBufs (bufs, buf) {
-  if (buf == null) buf = Buffer.alloc(BYTES)
+function xorBufs (bufs, bytes, buf) {
+  if (buf == null) buf = Buffer.alloc(bytes)
   assert(Buffer.isBuffer(buf), 'buf must be Buffer')
-  assert(buf.byteLength >= BYTES, 'buf must be at least BYTES long')
+  assert(buf.byteLength >= bytes, 'buf must be at least BYTES long')
 
   return bufs.reduce((r, b) => {
     for (var i = 0; i < r.byteLength; i++) {
