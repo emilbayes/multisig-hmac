@@ -87,7 +87,7 @@ class MultisigHMAC {
 
     return {
       bitfield: 1 << keyObj.index,
-      signature: crypto.createHmac('sha256', keyObj.key).update(data).digest(buf)
+      signature: crypto.createHmac(this._alg, keyObj.key).update(data).digest(buf)
     }
   }
 
