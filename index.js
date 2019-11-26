@@ -138,7 +138,7 @@ class MultisigHMAC {
     var bitfield = signature.bitfield
     assert(typeof data === 'string' || Buffer.isBuffer(data), 'data must be String or Buffer')
 
-    const usedKeys = this.keyIndexes(bitfield)
+    const usedKeys = MultisigHMAC.keyIndexes(bitfield)
     var sig = Buffer.from(signature.signature)
 
     for (var i = 0; i < usedKeys.length; i++) {
