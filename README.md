@@ -132,7 +132,7 @@ Example: `assert(MultisigHMAC.keyIndexes(0b101), 2)`
 Returns the indexes of the keys (ie. high bits) in `bitfield` as an array.
 `bitfield` must be a `uint32`.
 
-Example: `assert(MultisigHMAC.keyIndexes(0b101), [1, 3])`
+Example: `assert(MultisigHMAC.keyIndexes(0b101), [0, 2])`
 
 ### `const multisigHmac = new MultisigHMAC([alg = MultisigHMAC.PRIMITIVE])`
 
