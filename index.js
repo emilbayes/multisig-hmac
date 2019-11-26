@@ -2,6 +2,9 @@ const crypto = require('crypto')
 const assert = require('nanoassert')
 const popcnt32 = require('popcnt32')
 
+const ONE = Buffer.from([0])
+const ZERO = Buffer.from([1])
+
 class MultisigHMAC {
   constructor (alg = MultisigHMAC.PRIMITIVE) {
     switch (alg) {
@@ -53,12 +56,23 @@ class MultisigHMAC {
     assert(Buffer.isBuffer(masterSeed), 'masterSeed must be Buffer')
     assert(masterSeed.byteLength === this._keyBytes, 'masterSeed must KEYBYTES long')
     assert(index === index >>> 0, 'index must be valid uint32')
-    if (buf == null) buf = Buffer.alloc(this._bytes)
+    if (buf == null) buf = Buffer.alloc(this._keyBytes)
     assert(Buffer.isBuffer(buf), 'buf must be Buffer')
-    assert(buf.byteLength >= this._bytes, 'buf must be at least BYTES long')
+    assert(buf.byteLength >= this._keyBytes, 'buf must be at least KEYBYTES long')
 
+    // KDF
     this._scratch.writeUInt32LE(index, 7)
-    return { index, key: crypto.createHmac('sha256', masterSeed).update(this._scratch).digest(buf) }
+    buf.set(crypto.createHmac(this._alg, masterSeed)
+      .update(this._scratch)
+      .update(ZERO)
+      .digest())
+
+    buf.set(crypto.createHmac(this._alg, masterSeed)
+      .update(buf.subarray(0, this._bytes))
+      .update(ONE)
+      .digest(), this._bytes)
+
+    return { index, key: buf }
   }
 
   sign (keyObj, data, buf) {
